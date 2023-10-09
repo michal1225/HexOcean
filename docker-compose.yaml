@@ -1,0 +1,6 @@
+services:
+  web:
+    build:
+      target: builder
+    ports:
+      - '8000:8000'
