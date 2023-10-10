@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'media',
     'sorl.thumbnail',
     'accounts',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -140,3 +141,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'uploads'
 AUTH_USER_MODEL = 'accounts.CustomUser'
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10000000
+LOCALHOST = 'http://localhost:8000'

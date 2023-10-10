@@ -17,12 +17,17 @@ Including another URLconf
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
 from rekrutacja import settings
 
+router = DefaultRouter()
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('mediaform/', include('media.urls')),
+    path('media/', include('media.urls')),
+    path('api/v1/', include(router.urls)),
 
 ]
 if settings.DEBUG:
