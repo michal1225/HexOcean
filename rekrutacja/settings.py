@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'sorl.thumbnail',
     'accounts',
     'rest_framework',
+    'rest_framework.authtoken',
+    'knox',
 ]
 
 MIDDLEWARE = [
@@ -143,3 +145,11 @@ MEDIA_ROOT = BASE_DIR / 'uploads'
 AUTH_USER_MODEL = 'accounts.CustomUser'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10000000
 LOCALHOST = 'http://localhost:8000'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}

@@ -1,81 +1,75 @@
-import sys
-from io import BytesIO
-
-import np as np
-from PIL import Image
-from django.core.files.uploadedfile import InMemoryUploadedFile
-
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from rest_framework.views import APIView
-from media.models import ImgBasic, ImgThumb400, ImgThumb200, ImgPremium, ImgEnterprise
-from media.serializers import ImgEnterpriseSerializer, ImgPremiumSerializer, ImgBasicSerializer
-from rekrutacja import settings
+from media.models import Img
+from media.utils import CheckGroupPermissions, ConvertImage
+from media.serializers import ImgSerializer
 
 
-class ImgBasicViewSet(viewsets.ModelViewSet):
-    queryset = ImgBasic.objects.order_by('id')
-    serializer_class = ImgBasicSerializer
+class ImgViewSet(viewsets.ModelViewSet):
+    queryset = Img.objects.order_by('id')
+    serializer_class = ImgSerializer
     parser_classes = (MultiPartParser, FormParser)
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
 
-
-class ImgPremiumViewSet(viewsets.ModelViewSet):
-    queryset = ImgPremium.objects.order_by('id')
-    serializer_class = ImgPremiumSerializer
-    parser_classes = (MultiPartParser, FormParser)
-
-    def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
-
-
-class ImgEnterpriseViewSet(viewsets.ModelViewSet):
-    queryset = ImgEnterprise.objects.order_by('id')
-    serializer_class = ImgEnterpriseSerializer
-    parser_classes = (MultiPartParser, FormParser)
-
-    def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
 
 class ListImagesThumbnails(APIView):
+    def post(self, request):
+        serializer = ImgSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def get(self, request):
-        global thumb400_url, thumb200_url
-        qs = ImgPremium.objects.last()
-        output_400 = (400, 400)
-        output_200 = (200, 200)
-        img_name = qs.image.name.split('.')[0]
-        img = Image.open(qs.image)
+        image_converter = ConvertImage()
+        qs = Img.objects.last()
+        width = None
+        height = None
+        if CheckGroupPermissions.is_in_group(user=self.request.user, group_name='Premium'):
+            if qs is None:
+                return Response("No images in database!")
+            return Response({
+                "Thumbnail 200px height:": image_converter.convertTo200Height(qs=qs),
+                "Thumbnail 400px height:": image_converter.convertTo400Height(qs=qs),
+                "Original image:": qs.get_absolute_image_url
+            })
+        elif CheckGroupPermissions.is_in_group(user=self.request.user, group_name='Basic'):
+            if qs is None:
+                return Response("No images in database!")
+            return Response({
+                "Thumbnail 200px height:": image_converter.convertTo200Height(qs=qs),
+            })
+        elif CheckGroupPermissions.is_in_group(user=self.request.user, group_name='Enterprise'):
+            if qs is None:
+                return Response("No images in database!")
+            return Response({
+                "Thumbnail 200px height:": image_converter.convertTo200Height(qs=qs),
+                "Thumbnail 400px height:": image_converter.convertTo400Height(qs=qs),
+                "Original image:": qs.get_absolute_image_url
+            })
+        elif CheckGroupPermissions.is_in_group(user=self.request.user, group_name='admin'):
+            if qs is None:
+                return Response("No images in database!")
+            self.request.data.update({"width": 100, "height": 100})
+            width = self.request.data.get('width')
+            height = self.request.data.get('height')
 
-        if img.height > 400:
-            img.thumbnail(output_400)
-            thumb_io = BytesIO()
-            img.save(thumb_io, format='JPEG', quality=60)
-            thumbnails = InMemoryUploadedFile(thumb_io, 'ImageField', f"{img_name}_thumb.jpg",
-                                                   'image/jpeg', sys.getsizeof(output_400), None)
-            thumb_object = ImgThumb400.objects.create()
-            thumb_object.thumb.save(thumbnails.name, thumbnails)
-            thumb400_url = thumb_object.get_absolute_image_url
-
-        if img.height > 200:
-            img.thumbnail(output_200)
-            thumb_io = BytesIO()
-            img.save(thumb_io, format='JPEG', quality=60)
-            thumbnails = InMemoryUploadedFile(thumb_io, 'ImageField', f"{img_name}_thumb.jpg",
-                                              'image/jpeg', sys.getsizeof(output_400), None)
-            thumb_object = ImgThumb200.objects.create()
-            thumb_object.thumb.save(thumbnails.name, thumbnails)
-            thumb200_url = thumb_object.get_absolute_image_url
-        return Response({
-            "Thumbnail 400px height:": thumb400_url,
-            "Thumbnail 200px height:": thumb200_url,
-        })
-
-
-
-
-
+            if width is None or height is None:
+                return Response("You need to pass width and height in request!")
+            else:
+                return Response({
+                "Thumbnail 200px height:": image_converter.convertTo200Height(qs=qs),
+                "Thumbnail 400px height:": image_converter.convertTo400Height(qs=qs),
+                "Thumbnail:": image_converter.convert(qs=qs, request=self.request),
+                "Original image:": qs.get_absolute_image_url
+            })
+        else:
+            return Response("Permissions denied")

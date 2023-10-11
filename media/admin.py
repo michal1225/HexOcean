@@ -1,18 +1,19 @@
 from django.contrib import admin
 
-from media.models import ImgBasic, ImgPremium, ImgEnterprise
+from media.models import Img, ImgThumb400, ImgThumb200
 
 
-@admin.register(ImgBasic)
-class ImgBasicAdmin(admin.ModelAdmin):
+@admin.register(Img)
+class ImgAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(ImgPremium)
-class ImgPremiumAdmin(admin.ModelAdmin):
+
+@admin.register(ImgThumb200)
+class ImgThumb200Admin(admin.ModelAdmin):
     pass
 
 
-@admin.register(ImgEnterprise)
-class ImgEnterpriseAdmin(admin.ModelAdmin):
+@admin.register(ImgThumb400)
+class ImgThumb400Admin(admin.ModelAdmin):
     pass
