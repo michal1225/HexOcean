@@ -1,6 +1,27 @@
 services:
+  db:
+    image: postgres:latest
+    volumes:
+      - ./tmp/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
+
+
   web:
-    build:
-      target: builder
+    build: .
+    image: ubuntu
+    command: python3 manage.py runserver 0.0.0.0:8000
     ports:
-      - '8000:8000'
+      - "8000:8000"
+    volumes:
+      - .:/code
+    depends_on:
+      - migration
+      - db
+  migration:
+    image: ubuntu
+    command: python3 manage.py migrate --noinput
+    volumes:
+      - .:/code
+    depends_on:
+      - db
