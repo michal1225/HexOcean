@@ -68,7 +68,10 @@ class ConvertImage:
         thumb_object = None
         img_name = qs.image.name.split('.')[0]
         img = Image.open(qs.image)
-        output = (request.data.get('width'), request.data.get('height'))
+        try:
+            output = (int(request.data.get('width')), int(request.data.get('height')))
+        except:
+            return Response("You must send int width and height in request")
         img.thumbnail(output)
         thumb_io = BytesIO()
         img.save(thumb_io, format='JPEG', quality=60)

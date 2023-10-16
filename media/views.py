@@ -11,15 +11,6 @@ from media.utils import CheckGroupPermissions, ConvertImage
 from media.serializers import ImgSerializer
 
 
-class ImgViewSet(viewsets.ModelViewSet):
-    queryset = Img.objects.order_by('id')
-    serializer_class = ImgSerializer
-    parser_classes = (MultiPartParser, FormParser)
-
-    def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
-
-
 class ListImagesThumbnails(APIView):
     def post(self, request):
         serializer = ImgSerializer(data=request.data)
@@ -58,9 +49,9 @@ class ListImagesThumbnails(APIView):
         elif CheckGroupPermissions.is_in_group(user=self.request.user, group_name='admin'):
             if qs is None:
                 return Response("No images in database!")
-            self.request.data.update({"width": 100, "height": 100})
-            width = self.request.data.get('width')
-            height = self.request.data.get('height')
+            # self.request.data.update({"width": 100, "height": 100})
+            width = int(self.request.data.get('width'))
+            height = int(self.request.data.get('height'))
 
             if width is None or height is None:
                 return Response("You need to pass width and height in request!")

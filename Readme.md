@@ -18,3 +18,8 @@ There are basic, premium, enterprise, admin. You schould go to http://localhost:
 
 To check available options of thumbnail pictures (depending on group you chose) go to http://localhost:8000/media/listimg
 
+If you want to upload image, send it by post method.
+
+If you are on admin group and you want thumbnail image with width and height, send it in request.
+Type of width and height must be integer.
+
